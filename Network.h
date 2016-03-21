@@ -46,7 +46,7 @@ class Network {
   void createFeedForward(vector<int> neurons, function F, function DF);  
 
   // Network training/use
-  void train(vector<Matrix*>& input, vector<Matrix*>& targets, int subset=-1);
+  void train(int subset=-1);
   Matrix feedForward(Matrix& input);
 
   // Mutators
@@ -55,6 +55,10 @@ class Network {
   void setTrainingIters(int i) { trainingIters = i; }
   void setMinibatch(int m) { minibatch = m; }
   void setDisplay(bool d) { display = d; }
+  void setInputs(vector<Matrix*>& inputs) { this->inputs = inputs; }
+  void setTargets(vector<Matrix*>& targets) { this->targets = targets; }
+  void setTestInputs(vector<Matrix*>& inputs) { testInputs = inputs; }
+  void setTestTargets(vector<Matrix*>& targets) { testTargets = targets; }
 
  private:
   // Network data
@@ -69,6 +73,13 @@ class Network {
 
   bool display; // Whether to display iteration data
 
+  // Training/Testing data
+  vector<Matrix*> inputs;
+  vector<Matrix*> targets;
+  bool doTest;
+  vector<Matrix*> testInputs;
+  vector<Matrix*> testTargets;
+
   // Neuron data
   Matrix *weights, *biases; // Network parameters
   Matrix *aout, *zout;      // For backpropagation
@@ -77,10 +88,12 @@ class Network {
 
   // Helper functions
   inline void feedForward();
+  inline bool checkMax(const Matrix& target);
   inline double error(const Matrix& target);
   inline void outputError(const Matrix& target);
   inline void backPropagate();
   inline void gradientDescent();
+  inline void clearMatrices();
 };
 
 #endif

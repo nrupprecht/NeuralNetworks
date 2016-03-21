@@ -48,6 +48,7 @@ class Matrix {
   void resize(int rows, int cols); // Resize the matrix
   void random(double max=1);
   void T() { trans = !trans; }
+  void zero();
   
   // Quick handling of matrices
   void qrel();          // Release array memory

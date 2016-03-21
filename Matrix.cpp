@@ -29,7 +29,6 @@ Matrix Matrix::operator=(const Matrix& M) {
 }
 
 void multiply(const Matrix& A, const Matrix& B, Matrix& C) {
-  //C.setT(false);
   if (A.getCols()!=B.getRows() || A.getRows()!=C.getRows() || B.getCols()!=C.getCols())
     throw Matrix::MatrixMismatch();
 
@@ -115,6 +114,10 @@ void Matrix::random(double max) {
   for (int i=0; i<rows*cols; i++) {
     array[i] = max*(2*drand48()-1);
   }
+}
+
+void Matrix::zero() {
+  for (int i=0; i<rows*cols; i++) array[i] = 0;
 }
 
 void Matrix::qrel() {
