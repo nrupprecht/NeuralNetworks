@@ -19,8 +19,6 @@ int main(int argc, char* argv[]) {
   vector<Matrix*> testInputs, testTargets;
   testInputs = testUnpacker.getImages();
   testTargets = testUnpacker.getLabels();
-  
-  cout << testInputs.size() << endl;
 
   Network net;
   vector<int> neurons;
