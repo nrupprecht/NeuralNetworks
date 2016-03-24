@@ -24,17 +24,28 @@ int main(int argc, char* argv[]) {
   vector<int> neurons;
   
   neurons.push_back(784);
-  neurons.push_back(50); 
+  neurons.push_back(150); 
+  neurons.push_back(50);
   neurons.push_back(10);
+
+  net.setRate(0.001);
   
   net.createFeedForward(neurons, sigmoid, dsigmoid);
+
   net.setInputs(inputs);
   net.setTargets(targets);
+
   net.setTestInputs(testInputs);
   net.setTestTargets(testTargets);
-  net.setTrainingIters(100);
+
+  net.setTrainingIters(50);
   net.setDisplay(true);
   net.train();
+
+  for (auto p : inputs) delete p;
+  for (auto p : targets) delete p;
+  for (auto p : testInputs) delete p;
+  for (auto p : testTargets) delete p;
   
   return 0;
 }

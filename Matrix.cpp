@@ -49,16 +49,20 @@ void add(const Matrix& A, const Matrix& B, Matrix& C) {
   if (!Matrix::checkDims(A, B) || !Matrix::checkDims(A, C))
     throw Matrix::MatrixMismatch();
   for (int y=0; y<A.getRows(); y++)
-    for (int x=0; x<A.getCols(); x++)
-      C.at(y,x) = A.at(y,x)+B.at(y,x);
+    for (int x=0; x<A.getCols(); x++) {
+      C(y,x) = A(y,x)+B(y,x); // Unsafe version should be faster
+      //C.at(y,x) = A.at(y,x)+B.at(y,x);
+    }
 }
 
 void subtract(const Matrix& A, const Matrix& B, Matrix& C) {
   if (!Matrix::checkDims(A, B) || !Matrix::checkDims(A,C))
     throw Matrix::MatrixMismatch();
   for (int y=0;y<A.getRows(); y++)
-    for (int x=0; x<A.getCols(); x++)
-      C.at(y,x) = A.at(y,x)-B.at(y,x);
+    for (int x=0; x<A.getCols(); x++) {
+      C(y,x) = A(y,x)-B(y,x); // Unsafe version should be faster
+      //C.at(y,x) = A.at(y,x)-B.at(y,x);
+    }
 }
 
 void hadamard(const Matrix& A, const Matrix& B, Matrix& C) {
@@ -96,6 +100,32 @@ double Matrix::at(int row, int col) const {
   if (row<0 || row>=rows || col<0 || col>=cols)
     throw MatrixOutOfBounds(); // The indentation here doesn't work
   return array[cols*row + col];
+}
+
+double& Matrix::operator()(int row, int col) {
+  if (trans) { // Swap
+    int temp = col;
+    col = row;
+    row = temp;
+  }
+  return array[cols*row + col];
+}
+
+double Matrix::operator()(int row, int col) const {
+  if (trans) { // Swap
+    int temp = col;
+    col = row;
+    row = temp;
+  }
+  return array[cols*row + col];
+}
+
+double& Matrix::access_NT(int row, int col) {
+  return array[cols*row + col];
+}
+
+double& Matrix::access_T(int row, int col) {
+  return array[cols*col + row];
 }
 
 double Matrix::operator[](int index) {

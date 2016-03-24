@@ -55,11 +55,11 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
 
 void Network::train(int subset) {
   if (inputs.size()!=targets.size()) {
-    cout << "Training Input and Target sizes do not match." << endl;
+    cout << "Training Input size (" << inputs.size() << "and Target size (" << targets.size() << ") do not match." << endl;
     return; // Mismatch
   }
   if (testInputs.size()!=testTargets.size() && doTest) {
-    cout << "Test Input and Target sizes do not match." << endl;
+    cout << "Test Input size (" << testInputs.size() << ") and Target size (" << testTargets.size() << ") do not match." << endl;
     return; // Mismatch
   }
   if (!initialized) {
@@ -74,6 +74,8 @@ void Network::train(int subset) {
   int leftOver = NData % minibatch;
   for (int iter=0; iter<trainingIters; iter++) {
     double aveError = 0;
+    // Start Timing
+    clock_t start = clock();
     for (int i=0; i<nBatches; i++) {
       for (int j=0; j<minibatch; j++) {
 	int index = i*minibatch+j;
@@ -102,28 +104,30 @@ void Network::train(int subset) {
       gradientDescent();
       clearMatrices();
     }
-
+    
     // Iteration finished
-    if (doTest && !testInputs.empty() && display) {
-      int correct = 0;
-      for (int i=0; i<testInputs.size(); i++) {
-        aout[0].qref(*testInputs.at(i));
-        feedForward();
-        if (checkMax(*testTargets.at(i)))
-          correct++;
-        aout[0].qrel();
-      }
-      cout << "Test Set: " << static_cast<double>(correct)/testInputs.size() << "%" << endl;
-    }
+    clock_t end = clock();
     if (display) { // Display iteration summary
-      cout << "Iteration " << iter << ":" << endl;
+      cout << "Iteration " << iter+1 << ": " << static_cast<float>(end - start)/CLOCKS_PER_SEC << " seconds." << endl;
       cout << "Ave Error: " << aveError/inputs.size() << endl;
-      cout << endl;
+      // See how we do on the test set
+      if (doTest && !testInputs.empty()) {
+	int correct = 0;
+	for (int i=0; i<testInputs.size(); i++) {
+	  aout[0].qref(*testInputs.at(i));
+	  feedForward();
+	  if (checkMax(*testTargets.at(i)))
+	    correct++;
+	  aout[0].qrel();
+	}
+	cout << "Test Set: " << 100.*static_cast<double>(correct)/testInputs.size() << "%\n";
+      }
       // More later
+      cout << endl;
     }
 
     if (false) { 
-      // Checks how many training examples the network gets right
+      // Checks how many of the training examples the network gets right
       int correct = 0;
       for (int i=0; i<NData; i++) {
 	aout[0].qref(*inputs.at(i));
@@ -132,7 +136,7 @@ void Network::train(int subset) {
 	  correct++;
 	aout[0].qrel();
       }
-      cout << "Percent correct: " << correct/static_cast<double>(NData);
+      cout << "Training Set: " << correct/static_cast<double>(NData);
     }
   }
   cout << "Training over." << endl;

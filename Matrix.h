@@ -38,6 +38,10 @@ class Matrix {
   // Accessors
   double& at(int row, int col);
   double at(int row, int col) const;
+  double& operator() (int row, int col);
+  double operator() (int row, int col) const;
+  double& access_NT(int row, int col);
+  double& access_T(int row, int col);
   double operator[](int index);
   int getRows() const { return trans ? cols : rows; }
   int getCols() const { return trans ? rows : cols; }

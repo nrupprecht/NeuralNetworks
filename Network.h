@@ -8,6 +8,7 @@
 #include <vector>
 using std::vector;
 #include <math.h>
+#include <ctime>
 
 #include "Matrix.h"
 
