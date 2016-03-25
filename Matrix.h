@@ -7,6 +7,7 @@
 
 #include"/afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl/include/mkl.h"
 
+#include <math.h>   // For sqrt
 #include <stdlib.h> // For drand48
 #include <iostream> // For debugging
 using std::cout;
@@ -27,7 +28,11 @@ class Matrix {
   friend void multiply(const Matrix& A, const Matrix& B, Matrix& C);
   friend void multiply(const double m, const Matrix& A, Matrix& B);
   friend void add(const Matrix& A, const Matrix& B, Matrix& C);
+  friend void plusEq(Matrix& A, const Matrix& B);
+  friend void NTplusEqUnsafe(Matrix& A, const Matrix& B);
   friend void subtract(const Matrix& A, const Matrix& B, Matrix& C);
+  friend void minusEq(Matrix& A, const Matrix& B);
+  friend void NTminusEqUnsafe(Matrix& A, const Matrix& B);
   friend void hadamard(const Matrix& A, const Matrix& B, Matrix& C);
   friend void apply(const Matrix& A, function F, Matrix& C); // Apply F componentwise to A
 
@@ -47,6 +52,9 @@ class Matrix {
   int getCols() const { return trans ? rows : cols; }
   int getARows() const { return rows; }
   int getACols() const { return cols; }
+  double norm() const;
+  double max() const;
+  double min() const;
 
   // Setting Matrices
   void resize(int rows, int cols); // Resize the matrix

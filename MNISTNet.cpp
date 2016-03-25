@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   net.setTestInputs(testInputs);
   net.setTestTargets(testTargets);
 
-  net.setTrainingIters(50);
+  net.setTrainingIters(10);
   net.setDisplay(true);
   net.train();
 

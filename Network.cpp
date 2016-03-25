@@ -41,7 +41,7 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
   for (int i=1; i<total; i++) {
     weights[i].resize(neurons.at(i), neurons.at(i-1));
     biases[i].resize(neurons.at(i), 1);
-    weights[i].random(1);
+    weights[i].random(1/sqrt(neurons.at(i-1)));
     biases[i].random(1);
     wDeltas[i].resize(neurons.at(i), neurons.at(i-1));
     bDeltas[i].resize(neurons.at(i), 1);
@@ -53,7 +53,7 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
   initialized = true;
 }
 
-void Network::train(int subset) {
+void Network::train(int NData) {
   if (inputs.size()!=targets.size()) {
     cout << "Training Input size (" << inputs.size() << "and Target size (" << targets.size() << ") do not match." << endl;
     return; // Mismatch
@@ -66,12 +66,14 @@ void Network::train(int subset) {
     cout << "Network uninitialized" << endl;
     return; // Uninitialized
   }
+  if (NData<0 || NData>inputs.size()) NData = inputs.size();
 
-  if (subset<0 || subset>inputs.size()) subset = inputs.size();
+  // Announcement
+  cout << "Training data size: " << NData << endl << endl;
 
-  int NData = subset;
   int nBatches = NData/minibatch;
   int leftOver = NData % minibatch;
+  clearMatrices();
   for (int iter=0; iter<trainingIters; iter++) {
     double aveError = 0;
     // Start Timing
@@ -82,6 +84,7 @@ void Network::train(int subset) {
 	aout[0].qref(*inputs.at(index)); // Reference input
 	feedForward();
 	aveError += error(*targets.at(index));
+
 	outputError(*targets.at(index));
 	backPropagate();
 	aout[0].qrel(); // Release reference
@@ -185,7 +188,7 @@ inline bool Network::checkMax(const Matrix& target) {
 /// Squared error
 inline double Network::error(const Matrix& target) {
   double error = 0;
-  for (int i=0; i<target.getRows(); i++) 
+  for (int i=0; i<target.getRows(); i++)
     error += sqr(target.at(i,0) - aout[total-1].at(i,0));
   return error;
 }
@@ -205,12 +208,12 @@ inline void Network::backPropagate() {
     hadamard(acc, deltas[i], deltas[i]);
   }
   for(int i=1; i<total; i++) {
-      aout[i-1].T(); // Transpose
+    aout[i-1].T(); // Transpose
     Matrix diff(wDeltas[i].getRows(), wDeltas[i].getCols()); // Creating this every time may be to wasteful
     multiply(deltas[i], aout[i-1], diff);
     aout[i-1].T(); // Undo transpose
-    add(wDeltas[i], diff, wDeltas[i]);
-    add(bDeltas[i], deltas[i], bDeltas[i]);
+    NTplusEqUnsafe(wDeltas[i], diff);
+    NTplusEqUnsafe(bDeltas[i], deltas[i]);
   }
 }
 

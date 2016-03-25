@@ -49,10 +49,20 @@ void add(const Matrix& A, const Matrix& B, Matrix& C) {
   if (!Matrix::checkDims(A, B) || !Matrix::checkDims(A, C))
     throw Matrix::MatrixMismatch();
   for (int y=0; y<A.getRows(); y++)
-    for (int x=0; x<A.getCols(); x++) {
+    for (int x=0; x<A.getCols(); x++)
       C(y,x) = A(y,x)+B(y,x); // Unsafe version should be faster
-      //C.at(y,x) = A.at(y,x)+B.at(y,x);
-    }
+}
+
+void plusEq(Matrix& A, const Matrix& B) {
+  if (!Matrix::checkDims(A, B))
+    throw Matrix::MatrixMismatch();
+  for (int y=0; y<A.getRows(); y++)
+    for (int x=0; x<A.getCols(); x++)
+      A(y,x) += B(y,x);
+}
+
+void NTplusEqUnsafe(Matrix& A, const Matrix& B) {
+  for (int i=0; i<A.rows*A.cols; i++) A.array[i] += B.array[i];
 }
 
 void subtract(const Matrix& A, const Matrix& B, Matrix& C) {
@@ -63,6 +73,18 @@ void subtract(const Matrix& A, const Matrix& B, Matrix& C) {
       C(y,x) = A(y,x)-B(y,x); // Unsafe version should be faster
       //C.at(y,x) = A.at(y,x)-B.at(y,x);
     }
+}
+
+void minusEq(Matrix& A, const Matrix& B) {
+  if (!Matrix::checkDims(A, B))
+    throw Matrix::MatrixMismatch();
+  for (int y=0; y<A.getRows(); y++)
+    for (int x=0; x<A.getCols(); x++)
+      A(y,x) -=B(y,x);
+}
+
+void NTminusEqUnsafe(Matrix& A, const Matrix& B) {
+  for (int i=0;i<A.rows*A.cols; i++) A.array[i] -= B.array[i];
 }
 
 void hadamard(const Matrix& A, const Matrix& B, Matrix& C) {
@@ -132,6 +154,26 @@ double Matrix::operator[](int index) {
   if (index<0 || index>=rows*cols)
     throw MatrixOutOfBounds();
   return array[index];
+}
+
+double Matrix::norm() const {
+  double N = 0;
+  for (int i=0; i<rows*cols; i++) N += array[i]*array[i];
+  return sqrt(N);
+}
+
+double Matrix::max() const {
+  double M = -1e9;
+  for (int i=0; i<rows*cols; i++) 
+    if (M < array[i]) M = array[i];
+  return M;
+}
+
+double Matrix::min() const {
+  double M = 1e9;
+  for (int i=0; i<rows*cols; i++)
+    if (M > array[i]) M = array[i];
+  return M;
 }
 
 void Matrix::resize(int rows, int cols) {
