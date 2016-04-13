@@ -5,8 +5,9 @@
 #include "Network.h"
 #include "MNISTUnpack.h"
 
+#include <fstream>
+
 int main(int argc, char* argv[]) {
-  
   // Get the training data
   FileUnpack unpacker("MNISTData/MNIST_trainingImages","MNISTData/MNIST_trainingLabels");
   unpacker.unpackInfo();
@@ -24,11 +25,11 @@ int main(int argc, char* argv[]) {
   vector<int> neurons;
   
   neurons.push_back(784);
-  neurons.push_back(150); 
-  neurons.push_back(50);
+  neurons.push_back(100);
   neurons.push_back(10);
 
-  net.setRate(0.001);
+  net.setRate(0.01);
+  net.setL2const(0.);
   
   net.createFeedForward(neurons, sigmoid, dsigmoid);
 
@@ -38,7 +39,8 @@ int main(int argc, char* argv[]) {
   net.setTestInputs(testInputs);
   net.setTestTargets(testTargets);
 
-  net.setTrainingIters(10);
+  net.setMinibatch(1);
+  net.setTrainingIters(50);
   net.setDisplay(true);
   net.train();
 

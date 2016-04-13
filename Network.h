@@ -10,17 +10,7 @@ using std::vector;
 #include <math.h>
 #include <ctime>
 
-#include "Matrix.h"
-
-// The sigmoid function is a common function
-inline double sigmoid(double x) {
-  return 1.f/(1+exp(-x));
-}
-
-inline double dsigmoid(double x) {
-  double sig = sigmoid(x);
-  return sig*(1-sig);
-}
+#include "Neuron.h"
 
 /// The Network class
 class Network {
@@ -69,12 +59,8 @@ class Network {
   vector<Matrix*> testTargets;
 
   // Neuron data
-  Matrix *weights, *biases; // Network parameters
-  Matrix *aout, *zout;      // For backpropagation
-  // Deltas
-  Matrix *wDeltas, *bDeltas, *deltas;
-  // Helper Matrices
-  Matrix *diff;
+  Matrix *aout, *zout, *deltas;
+  Neuron** layers;
 
   // Helper functions
   inline void feedForward();
@@ -84,6 +70,7 @@ class Network {
   inline void backPropagate();
   inline void gradientDescent();
   inline void clearMatrices();
+  inline bool checkStart(int& NData);
 };
 
 #endif

@@ -1,4 +1,7 @@
 #include "Matrix.h"
+#include <ctype.h>
+#include <vector>
+using std::vector;
 
 Matrix::Matrix() : rows(0), cols(0), array(0), trans(false) {};
 
@@ -187,6 +190,12 @@ void Matrix::resize(int rows, int cols) {
   array = new double[rows*cols];
 }
 
+void Matrix::shape(int rows, int cols) {
+  if (rows*cols != this->rows*this->cols)
+    throw MatrixMismatch();
+  this->rows; this->cols = cols;
+}
+
 void Matrix::random(double max) {
   for (int i=0; i<rows*cols; i++) {
     array[i] = max*(2*drand48()-1);
@@ -222,6 +231,51 @@ std::ostream& operator<<(std::ostream& out, const Matrix& M) {
   out << "}";
 
   return out;
+}
+
+std::istream& operator>>(std::istream& in, Matrix& M) {
+  vector<vector<double>> array;
+  char c;
+  double num;
+  bool closed = true, open = false;
+  int rows = 0, cols = 0;
+  in.get(c);
+  while (!in.eof()) {
+    // Get rid of whitespaces
+    while (c==' ' || c=='\n' || c=='\r') in.get(c);
+    // Check chars
+    if (c=='{') {
+      closed = false;
+      if (open) {
+	rows++;
+	array.push_back(vector<double>());
+      }
+      open = true;
+    }
+    if (c=='}') {
+      if (closed) break;
+      else if (array.at(rows-1).size() > cols) cols = array.at(rows-1).size();
+      closed = true;
+    }
+    if (isdigit(c)) {
+      in.putback(c);
+      in >> num;
+      array.at(rows-1).push_back(num);
+    }
+    in.get(c);
+  }
+  
+  M.resize(rows, cols);
+  for (int i=0; i<rows; i++) {
+    int j;
+    for (j=0; j<array.at(i).size(); j++) {
+      M.at(i,j) = array.at(i).at(j);
+    }
+    for (; j<cols; j++) { // Hopefully this won't happen, but just in case
+      M.at(i,j) = array.at(i).at(j);
+    }
+  }
+  return in;
 }
 
 inline bool Matrix::checkDims(const Matrix& A, const Matrix& B) {

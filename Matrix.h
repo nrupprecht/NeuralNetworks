@@ -60,6 +60,7 @@ class Matrix {
 
   // Setting Matrices
   void resize(int rows, int cols); // Resize the matrix
+  void shape(int rows, int cols);  // Interpret the matrix as having a different shape
   void random(double max=1);
   void T() { trans = !trans; }
   void zero();
@@ -70,6 +71,7 @@ class Matrix {
 
   // Printing
   friend std::ostream& operator<<(std::ostream& out, const Matrix& M);
+  friend std::istream& operator>>(std::istream& in, Matrix& M);
 
  private:
   // Private helper functions
