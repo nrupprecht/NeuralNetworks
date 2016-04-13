@@ -7,7 +7,7 @@
 // Squaring function
 inline double sqr(double x) { return x*x; }
 
-Network::Network() : initialized(false), weights(0), biases(0), aout(0), zout(0), wDeltas(0), bDeltas(0), deltas(0), total(0), fnct(0), dfnct(0), rate(0.01), L2factor(0.01), trainingIters(100), minibatch(10), display(true), doTest(true) {};
+Network::Network() : initialized(false), weights(0), biases(0), aout(0), zout(0), wDeltas(0), bDeltas(0), deltas(0), total(0), fnct(0), dfnct(0), rate(0.01), factor(0.), L2const(0.), L2factor(0.), trainingIters(100), minibatch(10), display(true), doTest(true) {};
 
 Network::~Network() {
   if (weights) delete [] weights;
@@ -17,14 +17,13 @@ Network::~Network() {
   if (wDeltas) delete [] wDeltas;
   if (bDeltas) delete [] bDeltas;
   if (deltas) delete [] deltas;
+  if (diff) delete [] diff;
 }
 
 void Network::createFeedForward(vector<int> neurons, function F, function DF) {
   this->neurons = neurons;
   fnct = F; dfnct = DF;
   total = static_cast<int>(neurons.size());
-  weights = new Matrix[total];
-  biases = new Matrix[total];
 
   // Initialize vectors/matrices
   weights = new Matrix[total];
@@ -34,6 +33,7 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
   deltas = new Matrix[total];
   aout = new Matrix[total];
   zout = new Matrix[total];
+  diff = new Matrix[total];
 
   // Set vector/matrix sizes
   aout[0].resize(neurons.at(0), 1);
@@ -48,6 +48,7 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
     deltas[i].resize(neurons.at(i), 1);
     aout[i].resize(neurons.at(i), 1);
     zout[i].resize(neurons.at(i), 1);
+    diff[i].resize(neurons.at(i), neurons.at(i-1));
   }
   // The network has been initialized
   initialized = true;
@@ -69,22 +70,32 @@ void Network::train(int NData) {
   if (NData<0 || NData>inputs.size()) NData = inputs.size();
 
   // Announcement
-  cout << "Training data size: " << NData << endl << endl;
+  cout << "Training data size: " << NData << endl;
+  int complexity = 0, biases = 0;
+  for (int i=1; i<neurons.size(); i++) complexity += neurons.at(i)*neurons.at(i-1);
+  for (int i=1; i<neurons.size(); i++) biases += neurons.at(i);
+  cout << "Net complexity: Weights: " << complexity << ", Biases: " << biases << endl << endl;
 
   int nBatches = NData/minibatch;
   int leftOver = NData % minibatch;
   clearMatrices();
   for (int iter=0; iter<trainingIters; iter++) {
     double aveError = 0;
+    int trainCorrect = 0;
     // Start Timing
     clock_t start = clock();
     for (int i=0; i<nBatches; i++) {
+      factor = rate/minibatch;
+      L2factor = L2const * rate;
       for (int j=0; j<minibatch; j++) {
 	int index = i*minibatch+j;
 	aout[0].qref(*inputs.at(index)); // Reference input
 	feedForward();
+	// Check if was correct
+	if (checkMax(*targets.at(index)))
+	  trainCorrect++;
+	// Backpropagate
 	aveError += error(*targets.at(index));
-
 	outputError(*targets.at(index));
 	backPropagate();
 	aout[0].qrel(); // Release reference
@@ -94,11 +105,16 @@ void Network::train(int NData) {
       clearMatrices();
     }
     // Catch anything left out of a minibatch, make it its own minibatch
+    factor = rate/leftOver;
     if (leftOver>0) {
       for (int i=0; i<leftOver; i++) {
 	int index = NData-leftOver;
 	aout[0].qref(*inputs.at(index)); // Reference input
 	feedForward();
+	// Check if was correct
+        if (checkMax(*inputs.at(i)))
+          trainCorrect++;
+	// Backpropagate
 	aveError += error(*targets.at(index));
 	outputError(*targets.at(index));
 	backPropagate();
@@ -113,6 +129,7 @@ void Network::train(int NData) {
     if (display) { // Display iteration summary
       cout << "Iteration " << iter+1 << ": " << static_cast<float>(end - start)/CLOCKS_PER_SEC << " seconds." << endl;
       cout << "Ave Error: " << aveError/inputs.size() << endl;
+      cout << "Training Set: " << trainCorrect << "/" << inputs.size() << " (" << 100.*static_cast<double>(trainCorrect)/inputs.size() << "%)" << endl;
       // See how we do on the test set
       if (doTest && !testInputs.empty()) {
 	int correct = 0;
@@ -123,9 +140,11 @@ void Network::train(int NData) {
 	    correct++;
 	  aout[0].qrel();
 	}
-	cout << "Test Set: " << 100.*static_cast<double>(correct)/testInputs.size() << "%\n";
+	cout << "Test Set: " << correct << "/" << testInputs.size() << " (" << 100.*static_cast<double>(correct)/testInputs.size() << "%)\n";
       }
       // More later
+      // cout << weights[1].norm() << endl;
+      // Ending seperator
       cout << endl;
     }
 
@@ -149,7 +168,8 @@ Matrix Network::feedForward(Matrix& input) {
   aout[0].qref(input);
   for (int i=1; i<total; i++) {
     multiply(weights[i], aout[i-1], zout[i]); // W*a
-    add(zout[i], biases[i], zout[i]); // + b
+    //add(zout[i], biases[i], zout[i]);
+    NTplusEqUnsafe(zout[i], biases[i]); // + b
     apply(zout[i], fnct, aout[i]);
   }
   aout[0].qrel();
@@ -159,7 +179,8 @@ Matrix Network::feedForward(Matrix& input) {
 inline void Network::feedForward() {
   for (int i=1; i<total; i++) {
     multiply(weights[i], aout[i-1], zout[i]); // W*a
-    add(zout[i], biases[i], zout[i]); // + b
+    //add(zout[i], biases[i], zout[i]);
+    NTplusEqUnsafe(zout[i], biases[i]); // + b
     apply(zout[i], fnct, aout[i]);
   }
 }
@@ -209,20 +230,23 @@ inline void Network::backPropagate() {
   }
   for(int i=1; i<total; i++) {
     aout[i-1].T(); // Transpose
-    Matrix diff(wDeltas[i].getRows(), wDeltas[i].getCols()); // Creating this every time may be to wasteful
-    multiply(deltas[i], aout[i-1], diff);
+    multiply(deltas[i], aout[i-1], diff[i]);
     aout[i-1].T(); // Undo transpose
-    NTplusEqUnsafe(wDeltas[i], diff);
+    NTplusEqUnsafe(wDeltas[i], diff[i]);
     NTplusEqUnsafe(bDeltas[i], deltas[i]);
   }
 }
 
 inline void Network::gradientDescent() {
   for (int i=1; i<total; i++) {
-    multiply(rate, wDeltas[i], wDeltas[i]);
-    multiply(rate, bDeltas[i], bDeltas[i]);
-    subtract(weights[i], wDeltas[i], weights[i]);
-    subtract(biases[i], bDeltas[i], biases[i]);
+    double mult = 1-L2factor/weights[i].getCols();
+    timesEq(weights[i], mult); // L2 normalization
+
+    multiply(factor, wDeltas[i], wDeltas[i]);
+    multiply(factor, bDeltas[i], bDeltas[i]);
+    
+    NTminusEqUnsafe(weights[i], wDeltas[i]);
+    NTminusEqUnsafe(biases[i], bDeltas[i]);
   }
 }
 

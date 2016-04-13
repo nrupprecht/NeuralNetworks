@@ -4,19 +4,22 @@ CFLAGS = -std=c++14 $(OPT)
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
 LDLIBS = -lrt -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_sequential.a $(MKLROOT)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
 
-targets = MNISTNet CIFARNet
-objects = Network.o Matrix.o MNISTUnpack.o CIFARUnpack.o EasyBMP.o MNISTNet.o CIFARNet.o
+targets = MNISTNet CIFARNet driver
+all:	$(targets)
 
-.PHONY : default
-default : all
+#.PHONY : default
+#default : all
 
-.PHONY : all
-all : clean $(targets)
+# To clear everything before every make, uncomment these lines
+#all : clean $(targets)
 
 MNISTNet : MNISTNet.o Network.o Matrix.o MNISTUnpack.o EasyBMP.o
 	$(CC) -o $@ $^ $(LDLIBS)
 
 CIFARNet: CIFARNet.o Network.o Matrix.o CIFARUnpack.o
+	$(CC) -o $@ $^ $(LDLIBS)
+
+driver: driver.o TestNet.o Matrix.o MNISTUnpack.o EasyBMP.o Neuron.o
 	$(CC) -o $@ $^ $(LDLIBS)
 
 EasyBMP.o : EasyBMP/EasyBMP.cpp
@@ -27,4 +30,4 @@ EasyBMP.o : EasyBMP/EasyBMP.cpp
 
 .PHONY : clean
 clean:
-	rm -f $(targets) $(objects) *.stdout
+	rm -f $(targets) *.o *.stdout

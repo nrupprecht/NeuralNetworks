@@ -19,6 +19,7 @@ class Matrix {
  public:
   Matrix();
   Matrix(int rows, int columns);
+  Matrix(int rows, int columns, bool rand);
   Matrix(const Matrix& M);
   ~Matrix();
   
@@ -27,12 +28,13 @@ class Matrix {
   // Arithmetic functions
   friend void multiply(const Matrix& A, const Matrix& B, Matrix& C);
   friend void multiply(const double m, const Matrix& A, Matrix& B);
+  friend void timesEq(Matrix& A, const double m);
   friend void add(const Matrix& A, const Matrix& B, Matrix& C);
   friend void plusEq(Matrix& A, const Matrix& B);
-  friend void NTplusEqUnsafe(Matrix& A, const Matrix& B);
+  friend void NTplusEqUnsafe(Matrix& A, const Matrix& B, double mult=1.);
   friend void subtract(const Matrix& A, const Matrix& B, Matrix& C);
   friend void minusEq(Matrix& A, const Matrix& B);
-  friend void NTminusEqUnsafe(Matrix& A, const Matrix& B);
+  friend void NTminusEqUnsafe(Matrix& A, const Matrix& B, double mult=1.);
   friend void hadamard(const Matrix& A, const Matrix& B, Matrix& C);
   friend void apply(const Matrix& A, function F, Matrix& C); // Apply F componentwise to A
 

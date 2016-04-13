@@ -45,6 +45,11 @@ void multiply(const double m, const Matrix& A, Matrix& B) {
     B.array[i] = m*A.array[i];
 }
 
+void timesEq(Matrix& A, const double m) {
+  for (int i=0; i<A.rows*A.cols; i++)
+    A.array[i] *= m;
+}
+
 void add(const Matrix& A, const Matrix& B, Matrix& C) {
   if (!Matrix::checkDims(A, B) || !Matrix::checkDims(A, C))
     throw Matrix::MatrixMismatch();
@@ -61,8 +66,8 @@ void plusEq(Matrix& A, const Matrix& B) {
       A(y,x) += B(y,x);
 }
 
-void NTplusEqUnsafe(Matrix& A, const Matrix& B) {
-  for (int i=0; i<A.rows*A.cols; i++) A.array[i] += B.array[i];
+void NTplusEqUnsafe(Matrix& A, const Matrix& B, double mult) {
+  for (int i=0; i<A.rows*A.cols; i++) A.array[i] += mult*B.array[i];
 }
 
 void subtract(const Matrix& A, const Matrix& B, Matrix& C) {
@@ -83,8 +88,8 @@ void minusEq(Matrix& A, const Matrix& B) {
       A(y,x) -=B(y,x);
 }
 
-void NTminusEqUnsafe(Matrix& A, const Matrix& B) {
-  for (int i=0;i<A.rows*A.cols; i++) A.array[i] -= B.array[i];
+void NTminusEqUnsafe(Matrix& A, const Matrix& B, double mult) {
+  for (int i=0;i<A.rows*A.cols; i++) A.array[i] -= mult*B.array[i];
 }
 
 void hadamard(const Matrix& A, const Matrix& B, Matrix& C) {

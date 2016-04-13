@@ -22,22 +22,7 @@ inline double dsigmoid(double x) {
   return sig*(1-sig);
 }
 
-class Layer {
- public:
-  void feedForward(Matrix& input, Matrix& output);
-  void backProp(Matrix&);
-
- private:
-  
-};
-
-class Sigmoid : public Layer {
- public:
-
- private:
-  
-};
-
+/// The Network class
 class Network {
  public:
   Network();
@@ -52,7 +37,7 @@ class Network {
 
   // Mutators
   void setRate(double r) { rate = r; }
-  void setL2Factor(double l2) { L2factor = l2; }
+  void setL2const(double l2) { L2const = l2; }
   void setTrainingIters(int i) { trainingIters = i; }
   void setMinibatch(int m) { minibatch = m; }
   void setDisplay(bool d) { display = d; }
@@ -68,7 +53,9 @@ class Network {
   int total;         // Total number of [a] arrays needed (number of layers including input)
   bool initialized;  // Whether a network has been initialized or not
   double rate;       // The learning rate
-  double L2factor;   // The L2 norm factor
+  double factor;     // rate / minibatch
+  double L2const;    // The L2 penalty
+  double L2factor;   // L2const * rate
   int trainingIters; // The number of iterations we want to train for
   int minibatch;     // The minibatch size
 
@@ -86,6 +73,8 @@ class Network {
   Matrix *aout, *zout;      // For backpropagation
   // Deltas
   Matrix *wDeltas, *bDeltas, *deltas;
+  // Helper Matrices
+  Matrix *diff;
 
   // Helper functions
   inline void feedForward();
