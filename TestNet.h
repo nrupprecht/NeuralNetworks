@@ -6,6 +6,8 @@ using std::vector;
 
 #include "Neuron.h"
 
+template<typename T> T sqr(T x) { return x*x; }
+
 class Network {
  public:
   Network();
@@ -15,6 +17,7 @@ class Network {
 
  private:
 
+  inline double error(const Matrix& target);
   inline bool checkMax(const Matrix& target);
 
   int total;

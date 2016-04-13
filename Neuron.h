@@ -26,8 +26,8 @@ class Neuron {
  public:
   Neuron(const vector<int>& inShape, const vector<int>& outShape);
 
-  virtual void feedForward(const Matrix& input, Matrix& output, NCON con=NCON::REG) = 0;
-  virtual void backPropagate(const Matrix& deltaIn, Matrix& deltaOut, Matrix& aout, NCON con=NCON::REG) = 0;
+  virtual void feedForward(const Matrix& input, Matrix& output, Matrix& Zout) = 0;
+  virtual void backPropagate(const Matrix& deltaIn, Matrix& deltaOut, Matrix& Zout) = 0;
   virtual void updateDeltas(Matrix& aout, const Matrix& deltas) = 0; // aout not const so we can take the transpose
   virtual void gradientDescent(double factor) = 0;
 
@@ -43,8 +43,8 @@ class Sigmoid : public Neuron {
   Sigmoid(const vector<int>& inShape, const vector<int>& outShape);
   ~Sigmoid();
 
-  virtual void feedForward(const Matrix& input, Matrix& output, NCON con=NCON::REG);
-  virtual void backPropagate(const Matrix& input, Matrix& output, Matrix& zout, NCON con=NCON::REG);
+  virtual void feedForward(const Matrix& input, Matrix& output, Matrix& Zout);
+  virtual void backPropagate(const Matrix& input, Matrix& output, Matrix& Zout);
   virtual void updateDeltas(Matrix& aout, const Matrix& deltas);
   virtual void gradientDescent(double factor);
 
@@ -54,7 +54,6 @@ class Sigmoid : public Neuron {
   // Pointers to the matrices
   Matrix* weights;
   Matrix* biases;
-  Matrix* zout;
   Matrix* wDeltas;
   Matrix* bDeltas;
   Matrix* diff;
