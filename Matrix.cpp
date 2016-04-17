@@ -185,21 +185,19 @@ double Matrix::min() const {
 }
 
 void Matrix::resize(int rows, int cols) {
-  if (array) delete [] array;
+  if (array) delete [] array; 
   this->rows = rows; this->cols = cols;
   array = new double[rows*cols];
 }
 
-void Matrix::shape(int rows, int cols) {
+void Matrix::reshape(int rows, int cols) {
   if (rows*cols != this->rows*this->cols)
-    throw MatrixMismatch();
-  this->rows; this->cols = cols;
+    throw BadReshape();
+  this->rows = rows; this->cols = cols;
 }
 
 void Matrix::random(double max) {
-  for (int i=0; i<rows*cols; i++) {
-    array[i] = max*(2*drand48()-1);
-  }
+  for (int i=0; i<rows*cols; i++) array[i] = max*(2*drand48()-1);
 }
 
 void Matrix::zero() {

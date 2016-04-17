@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
   neurons.push_back(500);
   neurons.push_back(10);
 
-  net.setRate(0.01);
-  net.setMinibatch(1);
+  net.setRate(0.001);
+  net.setMinibatch(10);
   net.createFeedForward(neurons, sigmoid, dsigmoid);
 
   net.setInputs(images);

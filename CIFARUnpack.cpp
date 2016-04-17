@@ -31,11 +31,11 @@ void CifarUnpacker::unpackInfo(vector<string> fileNames) {
             fin.get(c);
             uint label = (uint)c;
             // Convert label data
-            Matrix *M = new Matrix(10,1);
+            Tensor *M = new Tensor(10,1);
 	    for(int p=0; p<10; p++) M->at(p,0) = p==label ? 1. : 0.;
             labels.push_back(M);
             
-	    Matrix *pixels = new Matrix(3072,1);
+	    Tensor *pixels = new Tensor(3072,1);
             // Get pixels
             int j;
             for(j=0; j<3072 && !fin.eof(); j++) { //1024 for Red,Green,Blue -> 3072

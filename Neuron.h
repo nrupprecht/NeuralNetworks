@@ -2,13 +2,10 @@
 /// Nathaniel Rupprecht 2016
 ///
 
-#ifndef NEURON_H
-#define NEURON_H
+#ifndef NEURONT_H
+#define NEURONT_H
 
-#include "Matrix.h"
-
-#include <vector>
-using std::vector;
+#include "Tensor.h"
 
 // The sigmoid function is a common function
 inline double sigmoid(double x) {
@@ -23,12 +20,13 @@ inline double dsigmoid(double x) {
 class Neuron {
  public:
   Neuron(const vector<int>& inShape, const vector<int>& outShape);
-  virtual void feedForward(const Matrix& input, Matrix& output, Matrix& Zout) = 0;
-  virtual void backPropagate(const Matrix& deltaIn, Matrix& deltaOut, Matrix& Zout) = 0;
-  virtual void updateDeltas(Matrix& aout, const Matrix& deltas) = 0; // aout not const so we can take the transpose
+  virtual void feedForward(const Tensor& input, Tensor& output, Tensor& Zout) = 0;
+  virtual void backPropagate(const Tensor& deltaIn, Tensor& deltaOut, Tensor& Zout) = 0;
+  virtual void updateDeltas(Tensor& aout, const Tensor& deltas) = 0; // aout not const so we can take the transpose
   virtual void gradientDescent(double factor) = 0;  
   virtual void clear() = 0;
-  virtual void setMatrix(int n, Matrix* M) = 0;
+  virtual void setTensor(int n, Tensor* M) = 0;
+  virtual Tensor*& getTensor(int n) = 0;
 
   class OutOfBounds {};
 
@@ -41,20 +39,22 @@ class Sigmoid : public Neuron {
   Sigmoid(const vector<int>& inShape, const vector<int>& outShape, bool tr=false);
   ~Sigmoid();
 
-  virtual void feedForward(const Matrix& input, Matrix& output, Matrix& Zout);
-  virtual void backPropagate(const Matrix& input, Matrix& output, Matrix& Zout);
-  virtual void updateDeltas(Matrix& aout, const Matrix& deltas);
+  virtual void feedForward(const Tensor& input, Tensor& output, Tensor& Zout);
+  virtual void backPropagate(const Tensor& input, Tensor& output, Tensor& Zout);
+  virtual void updateDeltas(Tensor& aout, const Tensor& deltas);
   virtual void gradientDescent(double factor);
   virtual void clear();
-  virtual void setMatrix(int n, Matrix *M);
+  virtual void setTensor(int n, Tensor *M);
+  virtual Tensor*& getTensor(int n);
 
+  void setTransposed(bool t) { transposed = t; }
  protected:
   // Pointers to the matrices
-  Matrix* weights;
-  Matrix* biases;
-  Matrix* wDeltas;
-  Matrix* bDeltas;
-  Matrix* diff;
+  Tensor* weights;
+  Tensor* biases;
+  Tensor* wDeltas;
+  Tensor* bDeltas;
+  Tensor* diff;
   bool owned;
   bool transposed;
 
@@ -80,8 +80,8 @@ class SigmoidM : public Sigmoid {
   // Pointers to the matrices
   double decay;
 
-  Matrix *wVelocity;
-  Matrix *bVelocity;
+  Tensor *wVelocity;
+  Tensor *bVelocity;
 };
 
 #endif

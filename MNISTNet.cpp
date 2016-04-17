@@ -5,19 +5,17 @@
 #include "Network.h"
 #include "MNISTUnpack.h"
 
-#include <fstream>
-
 int main(int argc, char* argv[]) {
   // Get the training data
   FileUnpack unpacker("MNISTData/MNIST_trainingImages","MNISTData/MNIST_trainingLabels");
   unpacker.unpackInfo();
-  vector<Matrix*> inputs, targets;
+  vector<Tensor*> inputs, targets;
   inputs = unpacker.getImages();
   targets = unpacker.getLabels();
   
   FileUnpack testUnpacker("MNISTData/MNIST_testImages", "MNISTData/MNIST_testLabels");
   testUnpacker.unpackInfo();
-  vector<Matrix*> testInputs, testTargets;
+  vector<Tensor*> testInputs, testTargets;
   testInputs = testUnpacker.getImages();
   testTargets = testUnpacker.getLabels();
 

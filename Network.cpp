@@ -7,7 +7,7 @@
 // Squaring function
 inline double sqr(double x) { return x*x; }
 
-Network::Network() : initialized(false), aout(0), zout(0), deltas(0), total(0), fnct(0), dfnct(0), rate(0.01), factor(0.), L2const(0.), L2factor(0.), trainingIters(100), minibatch(10), display(true), doTest(true) {};
+Network::Network() : initialized(false), aout(0), zout(0), deltas(0), total(0), fnct(0), dfnct(0), rate(0.01), factor(0.), L2const(0.), L2factor(0.), trainingIters(100), minibatch(10), display(true), doTest(true), checkCorrect(true) {};
 
 Network::~Network() {
   if (aout) delete [] aout;
@@ -15,25 +15,15 @@ Network::~Network() {
   if (deltas) delete [] deltas;
 }
 
-void Network::createFeedForward(vector<int> neurons, function F, function DF) {
+inline void Network::createArrays(vector<int>& neurons) {
   this->neurons = neurons;
-  fnct = F; dfnct = DF;
   total = static_cast<int>(neurons.size());
   layers = new Neuron*[total];
-  // Initialize layers
-  layers[0] = 0;
-  for (int i=1; i<total; i++) {
-    vector<int> in_v; 
-    in_v.push_back(neurons.at(i-1)); in_v.push_back(1); 
-    vector<int> out_v;
-    out_v.push_back(neurons.at(i)); out_v.push_back(1);
-    layers[i] = new Sigmoid(in_v, out_v);
-  }
-
-  // Initialize vectors/matrices
-  aout = new Matrix[total];
-  zout = new Matrix[total];
-  deltas = new Matrix[total];
+  
+  // Create Tensor arrays
+  aout = new Tensor[total];
+  zout = new Tensor[total];
+  deltas = new Tensor[total];
 
   // Set vector/matrix sizes
   aout[0].resize(neurons.at(0), 1);
@@ -43,8 +33,56 @@ void Network::createFeedForward(vector<int> neurons, function F, function DF) {
     zout[i].resize(neurons.at(i), 1);
     deltas[i].resize(neurons.at(i), 1);
   }
+}
+
+void Network::createFeedForward(vector<int>& neurons, function F, function DF) {
+  createArrays(neurons);
+
+  layers[0] = 0;
+  for (int i=1; i<total; i++) {
+    vector<int> in_v; 
+    in_v.push_back(neurons.at(i-1)); in_v.push_back(1); 
+    vector<int> out_v;
+    out_v.push_back(neurons.at(i)); out_v.push_back(1);
+    layers[i] = new Sigmoid(in_v, out_v);
+  }
+  
   // The network has been initialized
   initialized = true;
+}
+
+void Network::createAutoEncoder(vector<int>& neur, function F, function DF) {
+  vector<int> N;
+  for (int i=0; i<neur.size(); i++) N.push_back(neur.at(i));
+  for (int i=neur.size()-2; i>=0; i--) N.push_back(neur.at(i));
+  createArrays(N);
+
+  // Initialize layers
+  layers[0] = 0;
+  int i;
+  for (i=1; i<=neur.size(); i++) {
+    vector<int> in_v;
+    in_v.push_back(N.at(i-1)); in_v.push_back(1);
+    vector<int> out_v;
+    out_v.push_back(N.at(i)); out_v.push_back(1);
+    layers[i] = new Sigmoid(in_v, out_v);
+  }
+  int mid = i;
+  for (int c=1; i<total; i++, c++) {
+    vector<int> in_v;
+    in_v.push_back(N.at(i-1)); in_v.push_back(1);
+    vector<int> out_v;
+    out_v.push_back(N.at(i)); out_v.push_back(1);
+    
+    Sigmoid* S = new Sigmoid(in_v, out_v);
+    S->setTensor(0, layers[mid-c]->getTensor(0));
+    S->setTransposed(true);
+
+    layers[i] = S;
+  }
+  
+  initialized = true;
+  checkCorrect = false;
 }
 
 void Network::train(int NData) {
@@ -52,6 +90,9 @@ void Network::train(int NData) {
 
   int nBatches = NData/minibatch;
   int leftOver = NData % minibatch;
+  
+  int outSize = targets.at(0)->size();
+  double invErrNorm = 1.0/(NData*outSize);
 
   clearMatrices(); // Initial clear
   for (int iter=0; iter<trainingIters; iter++) {
@@ -67,7 +108,7 @@ void Network::train(int NData) {
 	aout[0].qref(*inputs.at(index)); // Reference input
 	feedForward();
 	// Check if was correct
-	if (checkMax(*targets.at(index)))
+	if (checkCorrect && checkMax(*targets.at(index)))
 	  trainCorrect++;
 	// Backpropagate
 	aveError += error(*targets.at(index));
@@ -103,8 +144,9 @@ void Network::train(int NData) {
     clock_t end = clock();
     if (display) { // Display iteration summary
       cout << "Iteration " << iter+1 << ": " << static_cast<float>(end - start)/CLOCKS_PER_SEC << " seconds." << endl;
-      cout << "Ave Error: " << aveError/inputs.size() << endl;
-      cout << "Training Set: " << trainCorrect << "/" << inputs.size() << " (" << 100.*static_cast<double>(trainCorrect)/inputs.size() << "%)" << endl;
+      cout << "Ave Error: " << aveError*invErrNorm << endl;
+      if (checkCorrect)
+	cout << "Training Set: " << trainCorrect << "/" << inputs.size() << " (" << 100.*static_cast<double>(trainCorrect)/inputs.size() << "%)" << endl;
       // See how we do on the test set
       if (doTest && !testInputs.empty()) {
 	int correct = 0;
@@ -117,9 +159,6 @@ void Network::train(int NData) {
 	}
 	cout << "Test Set: " << correct << "/" << testInputs.size() << " (" << 100.*static_cast<double>(correct)/testInputs.size() << "%)\n";
       }
-      // More later
-      // cout << weights[1].norm() << endl;
-      // Ending seperator
       cout << endl;
     }
 
@@ -136,10 +175,10 @@ void Network::train(int NData) {
       cout << "Training Set: " << correct/static_cast<double>(NData);
     }
   }
-  cout << "Training over." << endl;
+  if (display) cout << "Training over." << endl;
 }
 
-Matrix Network::feedForward(Matrix& input) {
+Tensor Network::feedForward(Tensor& input) {
   aout[0].qref(input);
   for (int i=1; i<total; i++)
     layers[i]->feedForward(aout[i-1], aout[i], zout[i]);
@@ -154,10 +193,11 @@ inline void Network::feedForward() {
 
 /// Checks if the maximum entry of target corresponds to the
 /// maximum entry of the result ( aout[total-1] )
-inline bool Network::checkMax(const Matrix& target) {
+inline bool Network::checkMax(const Tensor& target) {
   // Assumes output, target are vectors
   if (aout[total-1].getRows()!=target.getRows())
     throw 1; // Make a real error for this sometime
+
   int t_index = 0; double t_max = -1e6;
   int o_index = 0; double o_max = -1e6;
   for (int i=0; i<target.getRows(); i++) {
@@ -174,7 +214,7 @@ inline bool Network::checkMax(const Matrix& target) {
 }
 
 /// Squared error
-inline double Network::error(const Matrix& target) {
+inline double Network::error(const Tensor& target) {
   double error = 0;
   for (int i=0; i<target.getRows(); i++)
     error += sqr(target.at(i,0) - aout[total-1].at(i,0));
@@ -182,7 +222,7 @@ inline double Network::error(const Matrix& target) {
 }
 
 /// This error is the cross entropy
-inline void Network::outputError(const Matrix& target) {
+inline void Network::outputError(const Tensor& target) {
   subtract(aout[total-1], target, deltas[total-1]);
 }
 
@@ -221,11 +261,12 @@ inline bool Network::checkStart(int& NData) {
   if (NData<0 || NData>inputs.size()) NData = inputs.size();
 
   // Announcement
-  cout << "Training data size: " << NData << endl;
-  int complexity = 0, biases = 0;
-  for (int i=1; i<neurons.size(); i++) complexity += neurons.at(i)*neurons.at(i-1);
-  for (int i=1; i<neurons.size(); i++) biases += neurons.at(i);
-  cout << "Net complexity: Weights: " << complexity << ", Biases: " << biases << endl << endl;
-
+  if (display) {
+    cout << "Training data size: " << NData << endl;
+    int complexity = 0, biases = 0;
+    for (int i=1; i<neurons.size(); i++) complexity += neurons.at(i)*neurons.at(i-1);
+    for (int i=1; i<neurons.size(); i++) biases += neurons.at(i);
+    cout << "Net complexity: Weights: " << complexity << ", Biases: " << biases << endl << endl;
+  }
   return true;
 }

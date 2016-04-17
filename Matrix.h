@@ -5,15 +5,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include"/afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl/include/mkl.h"
-
-#include <math.h>   // For sqrt
-#include <stdlib.h> // For drand48
-#include <iostream> // For debugging
-using std::cout;
-using std::endl;
-
-typedef double (*function) (double);
+#include "Utility.h"
 
 class Matrix {
  public:
@@ -25,7 +17,7 @@ class Matrix {
   
   Matrix operator=(const Matrix& M);
 
-  // Arithmetic functions
+  /// Arithmetic functions
   friend void multiply(const Matrix& A, const Matrix& B, Matrix& C);
   friend void multiply(const double m, const Matrix& A, Matrix& B);
   friend void timesEq(Matrix& A, const double m);
@@ -38,11 +30,13 @@ class Matrix {
   friend void hadamard(const Matrix& A, const Matrix& B, Matrix& C);
   friend void apply(const Matrix& A, function F, Matrix& C); // Apply F componentwise to A
 
+  /// Error classes
   class MatrixOutOfBounds {};
   class MatrixMismatch {};
   class Unallocated {};
+  class BadReshape {};
 
-  // Accessors
+  /// Accessors
   double& at(int row, int col);
   double at(int row, int col) const;
   double& operator() (int row, int col);
@@ -54,30 +48,31 @@ class Matrix {
   int getCols() const { return trans ? rows : cols; }
   int getARows() const { return rows; }
   int getACols() const { return cols; }
+  int size() const { return rows*cols; }
   double norm() const;
   double max() const;
   double min() const;
 
-  // Setting Matrices
+  /// Setting Matrices
   void resize(int rows, int cols); // Resize the matrix
-  void shape(int rows, int cols);  // Interpret the matrix as having a different shape
+  void reshape(int rows, int cols);  // Interpret the matrix as having a different shape
   void random(double max=1);
   void T() { trans = !trans; }
   void zero();
   
-  // Quick handling of matrices
+  /// Quick handling of matrices
   void qrel();          // Release array memory
   void qref(Matrix& M); // Reference this matrices' array
 
-  // Printing
+  /// Printing and reading
   friend std::ostream& operator<<(std::ostream& out, const Matrix& M);
   friend std::istream& operator>>(std::istream& in, Matrix& M);
 
  private:
-  // Private helper functions
+  /// Private helper functions
   static inline bool checkDims(const Matrix& A, const Matrix& B);
 
-  // Private data
+  /// Private data
   double *array;
   int rows, cols;
   bool trans;

@@ -14,7 +14,7 @@ using std::ifstream;
 using std::vector;
 
 #include "EasyBMP/EasyBMP.h"
-#include "Matrix.h"
+#include "Tensor.h"
 
 typedef unsigned int uint;
 typedef unsigned char uchar;
@@ -27,11 +27,11 @@ class FileUnpack {
   void unpackInfo();
     
   BMP getImage(uint index);
-  Matrix& getLabel(uint index);
+  Tensor& getLabel(uint index);
     
   // Accessors
-  vector<Matrix*> getImages() {return images;}
-  vector<Matrix*> getLabels() {return labels;}
+  vector<Tensor*> getImages() {return images;}
+  vector<Tensor*> getLabels() {return labels;}
     
   // Mutators
   void setFileNames(string image, string label);
@@ -44,8 +44,8 @@ class FileUnpack {
   string labelFileName;
     
   // Unpacked info vectors
-  vector<Matrix*> images;  // Vector of images
-  vector<Matrix*> labels;   // Vector of labels
+  vector<Tensor*> images;  // Vector of images
+  vector<Tensor*> labels;   // Vector of labels
 };
 
 #endif // MNIST_UNPACK_H

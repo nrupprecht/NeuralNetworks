@@ -10,13 +10,13 @@ Neuron::Neuron(const vector<int>& inShape, const vector<int>& outShape) : inShap
 Sigmoid::Sigmoid(const vector<int>& inShape, const vector<int>& outShape, bool tr) : Neuron(inShape, outShape), L2factor(0) {
   // Assume the input/output is a vector (n, 1)
   int in = inShape.at(0), out = outShape.at(0);
-  weights = new Matrix(out, in);
+  weights = new Tensor(out, in);
   weights->random(1/sqrt(in));
-  wDeltas = new Matrix(out, in);
-  biases = new Matrix(out, 1);
+  wDeltas = new Tensor(out, in);
+  biases = new Tensor(out, 1);
   biases->random();
-  bDeltas = new Matrix(out, 1);
-  diff = new Matrix(out, in);
+  bDeltas = new Tensor(out, 1);
+  diff = new Tensor(out, in);
 
   fnct = sigmoid;
   dfnct = dsigmoid;
@@ -35,28 +35,28 @@ Sigmoid::~Sigmoid() {
   if (diff) delete [] diff;
 }
 
-void Sigmoid::feedForward(const Matrix& input, Matrix& output, Matrix& Zout) {
-  if (transposed) weights->T();
-  multiply(*weights, input, Zout);
-  if (transposed) weights->T();
+void Sigmoid::feedForward(const Tensor& input, Tensor& output, Tensor& Zout) {
+  int aI = 1;
+  if (transposed) aI = 0;
+  multiply(*weights, aI, input, 0, Zout);
   NTplusEqUnsafe(Zout, *biases);
   apply(Zout, fnct, output);
 }
 
-void Sigmoid::backPropagate(const Matrix& deltaIn, Matrix& deltaOut, Matrix& Zout) {
-  if (!transposed) weights->T();
-  Matrix acc(weights->getRows(), deltaIn.getCols());
-  multiply(*weights, deltaIn, acc);
-  if (!transposed) weights->T();  
+void Sigmoid::backPropagate(const Tensor& deltaIn, Tensor& deltaOut, Tensor& Zout) {
+  int aI = 0, d = weights->getCols(); // getRows()
+  if (transposed) {
+    aI = 1;
+    d = weights->getRows();
+  }
+  Tensor acc(d, deltaIn.getCols());
+  multiply(*weights, aI, deltaIn, 0, acc);
   apply(Zout, dfnct, deltaOut);
   hadamard(acc, deltaOut, deltaOut);
 }
 
-void Sigmoid::updateDeltas(Matrix& Aout, const Matrix& deltas) {
-  Aout.T();
-  multiply(deltas, Aout, *diff);
-  Aout.T();
-
+void Sigmoid::updateDeltas(Tensor& Aout, const Tensor& deltas) {
+  multiply(deltas, 1, Aout, 1, *diff);
   NTplusEqUnsafe(*wDeltas, *diff);
   NTplusEqUnsafe(*bDeltas, deltas);
 }
@@ -65,13 +65,15 @@ void Sigmoid::gradientDescent(double factor) {
   double mult = 1-L2factor/weights->getCols();
   timesEq(*weights, mult); // L2 normalization
 
-  multiply(factor, *wDeltas, *wDeltas);
-  multiply(factor, *bDeltas, *bDeltas);
+  timesEq(*wDeltas, factor);
+  //multiply(factor, *wDeltas, *wDeltas);
+  timesEq(*bDeltas, factor);
+  //multiply(factor, *bDeltas, *bDeltas);
 
   if (transposed) {
-    weights->T();
-    subtract(*weights, *wDeltas, *weights);
-    weights->T();
+    //weights->T();
+    subtract(*weights, *wDeltas, *weights); //** Problem here
+    //weights->T();
   }
   else NTminusEqUnsafe(*weights, *wDeltas);
   NTminusEqUnsafe(*biases, *bDeltas);
@@ -82,7 +84,7 @@ inline void Sigmoid::clear() {
   bDeltas->zero();
 }
 
-void Sigmoid::setMatrix(int n, Matrix* M) {
+void Sigmoid::setTensor(int n, Tensor* M) {
   // Do the naieve thing for now
 
   switch (n) {
@@ -106,10 +108,20 @@ void Sigmoid::setMatrix(int n, Matrix* M) {
   }
 }
 
+Tensor*& Sigmoid::getTensor(int n) {
+  switch (n) {
+  case 0: return weights;
+  case 1: return biases;
+  case 2: return wDeltas;
+  case 3: return bDeltas;
+  default: throw OutOfBounds();
+  }
+}
+
 SigmoidM::SigmoidM(const vector<int>& inShape, const vector<int>& outShape, bool tr) : Sigmoid(inShape, outShape, tr), decay(0.001) {
   int in = inShape.at(0), out = outShape.at(0);
-  wVelocity = new Matrix(out, in);
-  bVelocity = new Matrix(out, 1);
+  wVelocity = new Tensor(out, in);
+  bVelocity = new Tensor(out, 1);
 }
 
 SigmoidM::~SigmoidM() {
@@ -121,8 +133,11 @@ SigmoidM::~SigmoidM() {
 void SigmoidM::gradientDescent(double factor) {
   double mult = 1-L2factor/weights->getCols();
   timesEq(*weights, mult); // L2 normalization
-  multiply(factor, *wDeltas, *wDeltas);
-  multiply(factor, *bDeltas, *bDeltas);
+
+  timesEq(*wDeltas, factor);
+  //multiply(factor, *wDeltas, *wDeltas);
+  timesEq(*bDeltas, factor);
+  //multiply(factor, *bDeltas, *bDeltas);
 
   // Velocity decay
   timesEq(*wVelocity, 1-decay);
@@ -135,9 +150,9 @@ void SigmoidM::gradientDescent(double factor) {
   NTplusEqUnsafe(*bVelocity, *bDeltas);
   
   if (transposed) {
-    weights->T();
-    subtract(*weights, *wVelocity, *weights);
-    weights->T();
+    //weights->T();
+    subtract(*weights, *wVelocity, *weights); //** PROBLEM
+    //weights->T();
   }
   else NTminusEqUnsafe(*weights, *wVelocity);
   NTminusEqUnsafe(*biases, *bVelocity); 

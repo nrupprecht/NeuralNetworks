@@ -15,7 +15,7 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "Matrix.h"
+#include "Tensor.h"
 
 // Store image as a Matrix (column vector) [ red green blue ]
 class CifarUnpacker {
@@ -24,14 +24,14 @@ public:
     
     void unpackInfo(vector<string> fileNames);
     
-    vector<Matrix*> getInputSet()  {return images;}
-    vector<Matrix*>& getLabelSet() {return labels;}
+    vector<Tensor*> getInputSet()  {return images;}
+    vector<Tensor*>& getLabelSet() {return labels;}
     
 private:
     
     // Store the information
-    vector<Matrix*> images;
-    vector<Matrix*> labels;
+    vector<Tensor*> images;
+    vector<Tensor*> labels;
 };
 
 #endif /* defined(__Network__Cifar__) */
