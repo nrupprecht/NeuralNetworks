@@ -5,7 +5,7 @@ CFLAGS = -std=c++14 $(OPT)
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
 LDLIBS = -lrt -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_sequential.a $(MKLROOT)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
 
-targets = MNISTNet CIFARNet AutoEncodeMNIST driver
+targets = MNISTNet CIFARNet AutoEncodeMNIST
 base = Network.o Neuron.o Tensor.o
 all:	$(targets)
 
@@ -17,9 +17,6 @@ CIFARNet: CIFARNet.o $(base) CIFARUnpack.o
 	$(CC) -o $@ $^ $(LDLIBS)
 
 AutoEncodeMNIST: AutoEncodeMNIST.o $(base) MNISTUnpack.o EasyBMP.o
-	$(CC) -o $@ $^ $(LDLIBS)
-
-driver: driver.o Tensor.o Matrix.o
 	$(CC) -o $@ $^ $(LDLIBS)
 
 # Object files

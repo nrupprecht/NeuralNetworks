@@ -12,6 +12,7 @@ Tensor::Tensor(const Tensor& T) {
 Tensor& Tensor::operator=(const Tensor& T) {
   if (array) delete [] array;
   if (stride) delete [] stride;
+  
   initialize(T.shape);
   // Set values
   for (int i=0; i<total; i++) array[i] = T.array[i];
@@ -185,7 +186,7 @@ std::ostream& operator<<(std::ostream& out, const Tensor& T) {
   return out;
 }
 
-void Tensor::initialize(Shape s) {
+void Tensor::initialize(Shape s, bool del) {
   shape = s;
 
   // Find total
@@ -200,9 +201,11 @@ void Tensor::initialize(Shape s) {
     stride[i] = total/count;
   }
 
-  // Set data array
-  array = new double[total];
-  for (int i=0; i<total; i++) array[i] = 0.;
+  if (del) {
+    // Set data array
+    array = new double[total];
+    for (int i=0; i<total; i++) array[i] = 0.;
+  }
 }
 
 inline bool Tensor::checkDims(const Tensor& A, const Tensor& B) {

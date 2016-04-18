@@ -94,18 +94,18 @@ class Tensor {
   int getDim(int i);
   Shape getShape() const { return shape; }
 
-  // Setting Tensors
+  // resize - Change the rank/dimensions of a tensor
   template<typename ...T> void resize(int first, T... last) {
     if (array) delete [] array;
     if (stride) delete [] stride;
     *this = Tensor(first, last...);
   };
+  // reshape - Reinterpret the rank/dimensions of a tensor
   template<typename ...T> void reshape(int first, T... last) {
     Shape s(first, last...);
     int tot = s.getTotal();
     if (total!=tot) throw TensorBadReshape();
-    shape = s;
-    total = tot;
+    initialize(s, false);
   };
   void random(double max=1); // Written
   void zero();
@@ -124,9 +124,9 @@ class Tensor {
   /// Printing and reading
   friend std::ostream& operator<<(std::ostream& out, const Tensor& T);
 
-  // private: //**
+ private:
   /// Helper functions
-  void initialize(Shape s);
+  void initialize(Shape s, bool del=true);
   template<typename ...T> void at_address(int&, int) const {};
   template<typename ...T> void at_address(int& add, int step, int first, T ... last) const {
     if (step>=shape.rank || first>=shape.dims[step]) throw TensorOutOfBounds();
