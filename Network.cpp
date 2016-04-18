@@ -7,12 +7,17 @@
 // Squaring function
 inline double sqr(double x) { return x*x; }
 
-Network::Network() : initialized(false), aout(0), zout(0), deltas(0), total(0), fnct(0), dfnct(0), rate(0.01), factor(0.), L2const(0.), L2factor(0.), trainingIters(100), minibatch(10), display(true), doTest(true), checkCorrect(true) {};
+Network::Network() : initialized(false), aout(0), zout(0), deltas(0), trainMarker(0), total(0), fnct(0), dfnct(0), rate(0.01), factor(0.), L2const(0.), L2factor(0.), trainingIters(100), minibatch(10), display(true), doTest(true), checkCorrect(true), calcError(true) {};
 
 Network::~Network() {
+  deleteArrays();
+}
+
+inline void Network::deleteArrays() {
   if (aout) delete [] aout;
   if (zout) delete [] zout;
   if (deltas) delete [] deltas;
+  if (trainMarker) delete [] trainMarker;
 }
 
 inline void Network::createArrays(vector<int>& neurons) {
@@ -24,6 +29,7 @@ inline void Network::createArrays(vector<int>& neurons) {
   aout = new Tensor[total];
   zout = new Tensor[total];
   deltas = new Tensor[total];
+  trainMarker = new bool[total];
 
   // Set vector/matrix sizes
   aout[0].resize(neurons.at(0), 1);
@@ -33,17 +39,18 @@ inline void Network::createArrays(vector<int>& neurons) {
     zout[i].resize(neurons.at(i), 1);
     deltas[i].resize(neurons.at(i), 1);
   }
+  // Set trainMarker array
+  for (int i=0; i<total; i++) trainMarker[i] = true;
 }
 
 void Network::createFeedForward(vector<int>& neurons, function F, function DF) {
+  deleteArrays();
   createArrays(neurons);
-
+  // Set up layers
   layers[0] = 0;
   for (int i=1; i<total; i++) {
-    vector<int> in_v; 
-    in_v.push_back(neurons.at(i-1)); in_v.push_back(1); 
-    vector<int> out_v;
-    out_v.push_back(neurons.at(i)); out_v.push_back(1);
+    Shape in_v(neurons.at(i-1), 1);
+    Shape out_v(neurons.at(i), 1);
     layers[i] = new Sigmoid(in_v, out_v);
   }
   
@@ -61,18 +68,14 @@ void Network::createAutoEncoder(vector<int>& neur, function F, function DF) {
   layers[0] = 0;
   int i;
   for (i=1; i<=neur.size(); i++) {
-    vector<int> in_v;
-    in_v.push_back(N.at(i-1)); in_v.push_back(1);
-    vector<int> out_v;
-    out_v.push_back(N.at(i)); out_v.push_back(1);
+    Shape in_v(N.at(i-1), 1);
+    Shape out_v(N.at(i), 1);
     layers[i] = new Sigmoid(in_v, out_v);
   }
   int mid = i;
   for (int c=1; i<total; i++, c++) {
-    vector<int> in_v;
-    in_v.push_back(N.at(i-1)); in_v.push_back(1);
-    vector<int> out_v;
-    out_v.push_back(N.at(i)); out_v.push_back(1);
+    Shape in_v(N.at(i-1), 1);
+    Shape out_v(N.at(i), 1);
     
     Sigmoid* S = new Sigmoid(in_v, out_v);
     S->setTensor(0, layers[mid-c]->getTensor(0));
@@ -108,10 +111,10 @@ void Network::train(int NData) {
 	aout[0].qref(*inputs.at(index)); // Reference input
 	feedForward();
 	// Check if was correct
-	if (checkCorrect && checkMax(*targets.at(index)))
-	  trainCorrect++;
+	if (checkCorrect && checkMax(*targets.at(index))) trainCorrect++;
+	// Calculate the error
+	if (calcError) aveError += sqrError(*targets.at(index));
 	// Backpropagate
-	aveError += error(*targets.at(index));
 	outputError(*targets.at(index));
 	backPropagate();
 	aout[0].qrel(); // Release reference
@@ -130,8 +133,9 @@ void Network::train(int NData) {
 	// Check if was correct
         if (checkMax(*inputs.at(i)))
           trainCorrect++;
+	// Calculate the error
+	if (calcError) aveError += sqrError(*targets.at(index));
 	// Backpropagate
-	aveError += error(*targets.at(index));
 	outputError(*targets.at(index));
 	backPropagate();
 	aout[0].qrel(); // Release reference
@@ -144,7 +148,7 @@ void Network::train(int NData) {
     clock_t end = clock();
     if (display) { // Display iteration summary
       cout << "Iteration " << iter+1 << ": " << static_cast<float>(end - start)/CLOCKS_PER_SEC << " seconds." << endl;
-      cout << "Ave Error: " << aveError*invErrNorm << endl;
+      if (calcError) cout << "Ave Error: " << aveError*invErrNorm << endl;
       if (checkCorrect)
 	cout << "Training Set: " << trainCorrect << "/" << inputs.size() << " (" << 100.*static_cast<double>(trainCorrect)/inputs.size() << "%)" << endl;
       // See how we do on the test set
@@ -214,7 +218,7 @@ inline bool Network::checkMax(const Tensor& target) {
 }
 
 /// Squared error
-inline double Network::error(const Tensor& target) {
+inline double Network::sqrError(const Tensor& target) {
   double error = 0;
   for (int i=0; i<target.getRows(); i++)
     error += sqr(target.at(i,0) - aout[total-1].at(i,0));
@@ -235,7 +239,9 @@ inline void Network::backPropagate() {
 }
 
 inline void Network::gradientDescent() {
-  for (int i=1; i<total; i++) layers[i]->gradientDescent(factor);
+  for (int i=1; i<total; i++) 
+    if (trainMarker[i]) 
+      layers[i]->gradientDescent(factor);
 }
 
 inline void Network::clearMatrices() {

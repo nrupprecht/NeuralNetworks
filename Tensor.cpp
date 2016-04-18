@@ -9,6 +9,11 @@ Tensor::Tensor(const Tensor& T) {
   for (int i=0; i<total; i++) array[i] = T.array[i];
 }
 
+Tensor::~Tensor() {
+  if (array) delete [] array;
+  if (stride) delete [] stride;
+}
+
 Tensor& Tensor::operator=(const Tensor& T) {
   if (array) delete [] array;
   if (stride) delete [] stride;
@@ -18,9 +23,32 @@ Tensor& Tensor::operator=(const Tensor& T) {
   for (int i=0; i<total; i++) array[i] = T.array[i];
 }
 
-Tensor::~Tensor() {
+/*
+Tensor& Tensor::operator=(const Tensor&& T) {
   if (array) delete [] array;
   if (stride) delete [] stride;
+  array = T.array;
+  stride = T.stride;
+  shape = T.shape;
+  total = T.total;
+}
+*/
+
+Tensor Tensor::shift(const Shape& shift) const {
+  Tensor T(shape); // Same shape, shift entries
+  vector<int> point;
+  point.reserve(shape.rank);
+  shift_helper(shift, point, T);
+  return T;
+}
+
+void Tensor::set(double value, vector<int> indices, const Shape& shift) {
+  if (indices.size()!=shape.rank || shift.rank!=shape.rank) return;
+  for (int i=0; i<indices.size(); i++) {
+    int& add = indices.at(i) = indices.at(i)+shift.at(i);
+    if (add<0 || add>=shape.dims[i]) return;
+  }
+  at(indices) = value;
 }
 
 void multiply(const Tensor& A, int aI, const Tensor& B, int bI, Tensor& C) {
@@ -90,8 +118,10 @@ void multiply(const Tensor& A, int aI, const Tensor& B, int bI, Tensor& C) {
     cblas_dgemm(CblasRowMajor, AT, BT, m, n, k, ALPHA, A.array, ac, B.array, bc, BETA, C.array, cc);
     return;
   }
-
+  
   // STUB
+  
+  
   
 }
 
@@ -125,9 +155,25 @@ void NTminusEqUnsafe(Tensor& A, const Tensor& B, double mult) {
   for (int i=0;i<A.total; i++) A.array[i] -= mult*B.array[i];
 }
 
+void TminusEq(Tensor& A, const Tensor& B, double mult) {
+  // Do checks
+  if (A.shape.rank!=2 || B.shape.rank!=2) throw Tensor::TensorBadFunction();
+  if (A.shape.dims[0]!=B.shape.dims[1] || A.shape.dims[1]!=B.shape.dims[0])
+    throw Tensor::TensorDimsMismatch();
+  // Do subtraction
+  for (int i=0; i<2; i++)
+    for (int j=0; j<2; j++)
+      A.at(i,j) -= mult*B.at(j,i);
+}
+
 void hadamard(const Tensor &A, const Tensor& B, Tensor& C) {
   Tensor::checkDims(A, B); Tensor::checkDims(A, C);
   for (int i=0; i<A.total; i++) C.array[i] = A.array[i] * B.array[i];
+}
+
+void hadamardEq(Tensor& A, const Tensor& B) {
+  Tensor::checkDims(A, B);
+  for (int i=0; i<A.total; i++) A.array[i] *= B.array[i];
 }
 
 void apply(const Tensor& A, function F, Tensor& C) {
@@ -138,6 +184,18 @@ void apply(const Tensor& A, function F, Tensor& C) {
 int Tensor::getDim(int i) {
   if (i<0 || i>shape.rank) throw TensorRankMismatch();
   return shape.dims[i];
+}
+
+void Tensor::resize(const Shape& s) {
+  if (array) delete [] array;
+  if (stride) delete [] stride;
+  *this = Tensor(s);
+}
+
+void Tensor::reshape(const Shape& s) {
+  int tot = s.getTotal();
+  if (total!=tot) throw TensorBadReshape();
+  initialize(s, false);
 }
 
 void Tensor::random(double max) {
@@ -213,4 +271,22 @@ inline bool Tensor::checkDims(const Tensor& A, const Tensor& B) {
   for (int i=0; i<A.shape.rank; i++) 
     if (A.shape.dims[i]!=B.shape.dims[i])
       throw TensorDimsMismatch();
+}
+
+inline void Tensor::shift_helper(const Shape& shift, vector<int>& point, Tensor& T) const {
+  int iter = point.size();
+  if (shape.rank-1==iter) {
+    for (int i=0; i<shape.dims[iter]; i++) {
+      point.push_back(i);
+      double value = at(point);
+      T.set(value, point, shift);
+      point.pop_back();
+    }
+  }
+  else
+    for (int i=0; i<shape.dims[iter]; i++) {
+      point.push_back(i);
+      shift_helper(shift, point, T);
+      point.pop_back();
+    }
 }

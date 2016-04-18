@@ -52,6 +52,7 @@ class Network {
   void setMinibatch(int m) { minibatch = m; }
   void setDisplay(bool d) { display = d; }
   void setCheckCorrect(bool c) { checkCorrect = c; }
+  void setCalcError(bool e) { calcError = e; }
   void setInputs(vector<Tensor*>& inputs) { this->inputs = inputs; }
   void setTargets(vector<Tensor*>& targets) { this->targets = targets; }
   void setTestInputs(vector<Tensor*>& inputs) { testInputs = inputs; }
@@ -71,6 +72,7 @@ class Network {
   int minibatch;     // The minibatch size
 
   bool display; // Whether to display iteration data
+  bool calcError; // Whether to calculate the squared error or not
   bool checkCorrect; // Whether to check whether training data was correct
 
   // Training/Testing data
@@ -83,12 +85,14 @@ class Network {
   // Neuron data
   Tensor *aout, *zout, *deltas;
   Neuron** layers;
+  bool *trainMarker; // Which layers to train
 
   // Helper functions
+  inline void deleteArrays();
   inline void createArrays(vector<int>& neurons);
   inline void feedForward();
   inline bool checkMax(const Tensor& target);
-  inline double error(const Tensor& target);
+  inline double sqrError(const Tensor& target);
   inline void outputError(const Tensor& target);
   inline void backPropagate();
   inline void gradientDescent();

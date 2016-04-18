@@ -30,10 +30,13 @@ class Tensor {
   ~Tensor();
 
   Tensor& operator=(const Tensor& T);
+  //Tensor& operator=(const Tensor&& T);
   
+  Tensor shift(const Shape& shft) const;
+
   // "at" function
   double& at(uint i) {
-    if (shape.dims[0]<=i) throw TensorDimsMismatch();
+    if (shape.dims[0]<=i || i<0) throw TensorDimsMismatch();
     return array[i*stride[0]];
   }
   template<typename ...T> double& at(uint first, T ...s) {
@@ -43,7 +46,7 @@ class Tensor {
   }
 
   double at(uint i) const { 
-    if (shape.dims[0]>=i) throw TensorDimsMismatch();
+    if (shape.dims[0]<=i || i<0) throw TensorDimsMismatch();
     return array[i*stride[0]]; 
   }
   template<typename ...T> double at(uint first, T ...s) const {
@@ -59,7 +62,6 @@ class Tensor {
       add += stride[i]*indices.at(i);
     return array[add];
   }
-
   double at(vector<int> indices) const {
     if (indices.size()>shape.rank) throw TensorRankMismatch();
     int add = 0;
@@ -67,6 +69,8 @@ class Tensor {
       add += stride[i]*indices.at(i);
     return array[add];
   }
+
+  void set(double value, vector<int> indices, const Shape& shift);
 
   /// Special (matrix type) accessors
   int getRows() const {
@@ -85,7 +89,9 @@ class Tensor {
   friend void NTplusEqUnsafe(Tensor& A, const Tensor& B, double mult=1.);
   friend void subtract(const Tensor&A, const Tensor& B, Tensor& C);
   friend void NTminusEqUnsafe(Tensor& A, const Tensor& B, double mult=1.);
+  friend void TminusEq(Tensor& A, const Tensor& B, double mult=1.);
   friend void hadamard(const Tensor&A, const Tensor& B, Tensor& C);
+  friend void hadamardEq(Tensor& A, const Tensor& B);
   friend void apply(const Tensor& A, function F, Tensor& C);
 
   /// Accessors
@@ -100,6 +106,7 @@ class Tensor {
     if (stride) delete [] stride;
     *this = Tensor(first, last...);
   };
+  void resize(const Shape& s);
   // reshape - Reinterpret the rank/dimensions of a tensor
   template<typename ...T> void reshape(int first, T... last) {
     Shape s(first, last...);
@@ -107,6 +114,8 @@ class Tensor {
     if (total!=tot) throw TensorBadReshape();
     initialize(s, false);
   };
+  void reshape(const Shape& s);
+
   void random(double max=1); // Written
   void zero();
   
@@ -120,6 +129,7 @@ class Tensor {
   class TensorDimsMismatch {};
   class TensorBadReshape {};
   class TensorBadContraction {};
+  class TensorBadFunction {};
 
   /// Printing and reading
   friend std::ostream& operator<<(std::ostream& out, const Tensor& T);
@@ -134,9 +144,9 @@ class Tensor {
     at_address(add, step+1, last...);
   }
 
-  static inline bool checkDims(const Tensor& A, const Tensor& B);
-  static inline void writeHelper(vector<int> indices, std::ostream& out, const Tensor& T);
-  
+  static inline bool checkDims(const Tensor&, const Tensor&);
+  static inline void writeHelper(vector<int>, std::ostream&, const Tensor&);
+  inline void shift_helper(const Shape& shift, vector<int>& point, Tensor& T) const;
   
   /// Data
   Shape shape; // The shape of the tensor

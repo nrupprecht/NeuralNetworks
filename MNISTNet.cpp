@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   vector<int> neurons;
   
   neurons.push_back(784);
-  neurons.push_back(100);
+  neurons.push_back(120);
   neurons.push_back(10);
 
   net.setRate(0.01);
@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 
   net.setMinibatch(1);
   net.setTrainingIters(50);
+  net.setCalcError(true);
   net.setDisplay(true);
   net.train();
 

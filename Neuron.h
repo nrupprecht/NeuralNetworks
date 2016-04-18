@@ -19,7 +19,7 @@ inline double dsigmoid(double x) {
 
 class Neuron {
  public:
-  Neuron(const vector<int>& inShape, const vector<int>& outShape);
+  Neuron(const Shape& inShape, const Shape& outShape);
   virtual void feedForward(const Tensor& input, Tensor& output, Tensor& Zout) = 0;
   virtual void backPropagate(const Tensor& deltaIn, Tensor& deltaOut, Tensor& Zout) = 0;
   virtual void updateDeltas(Tensor& aout, const Tensor& deltas) = 0; // aout not const so we can take the transpose
@@ -31,12 +31,12 @@ class Neuron {
   class OutOfBounds {};
 
  protected:
-  vector<int> inShape, outShape;
+  Shape inShape, outShape;
 };
 
 class Sigmoid : public Neuron {
  public:
-  Sigmoid(const vector<int>& inShape, const vector<int>& outShape, bool tr=false);
+  Sigmoid(const Shape& inShape, const Shape& outShape, bool tr=false);
   ~Sigmoid();
 
   virtual void feedForward(const Tensor& input, Tensor& output, Tensor& Zout);
@@ -55,33 +55,19 @@ class Sigmoid : public Neuron {
   Tensor* wDeltas;
   Tensor* bDeltas;
   Tensor* diff;
+  Tensor acc;
   bool owned;
   bool transposed;
 
   double L2factor;
 
   // Input and output shapes
-  vector<int> inShape;
-  vector<int> outShape;
+  Shape inShape;
+  Shape outShape;
 
   // Activation function and its derivative
   double (*fnct) (double);
   double (*dfnct) (double);
-};
-
-class SigmoidM : public Sigmoid {
- public:
-  SigmoidM(const vector<int>& inShape, const vector<int>& outShape, bool tr=false);
-  ~SigmoidM();
-  
-  virtual void gradientDescent(double factor);
-  
- private:
-  // Pointers to the matrices
-  double decay;
-
-  Tensor *wVelocity;
-  Tensor *bVelocity;
 };
 
 #endif

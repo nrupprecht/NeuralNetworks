@@ -44,6 +44,23 @@ struct Shape {
     if(dims) delete [] dims; 
   }
 
+  friend Shape operator+(const Shape& A, const Shape& B) {
+    int rank = A.rank+B.rank;
+    Shape S;
+    S.rank = rank;
+    int i;
+    // Set dims
+    S.dims = new int[rank];
+    for (i=0; i<A.rank; i++) S.dims[i] = A.dims[i];
+    for (int k=0; i<rank; i++, k++) S.dims[i] = B.dims[k];
+    // Compute total
+    int total = 1;
+    for (i=0; i<rank; i++) total *= S.dims[i];
+    S.total = total;
+    // Return
+    return S;
+  }
+
   friend ostream& operator<<(ostream& out, const Shape& s) {
     if (s.rank==0) {
       out << "{}";
@@ -66,7 +83,15 @@ struct Shape {
     return true;
   }
 
-  int getTotal() { return total; }
+  int getTotal() const { return total; }
+
+  int at(int i) const {
+    if (i<0 || i>=rank) throw ShapeOutOfBounds();
+    return dims[i];
+  }
+  
+  // Error classes
+  class ShapeOutOfBounds {};
 
   int rank;
   int* dims;
