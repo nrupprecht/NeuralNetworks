@@ -80,6 +80,9 @@ class Tensor {
   }
   int getCols() const { return shape.dims[shape.rank-1]; }
 
+  /// Dangerous
+  double* getArray() { return array; }
+
   /// Arithmetic functions
   friend void multiply(const Tensor& A, int aI, const Tensor& B, int bI, Tensor& C);
   friend void multiply(const Tensor& A, const Tensor& B, Tensor& C);
@@ -95,7 +98,8 @@ class Tensor {
   friend void apply(const Tensor& A, function F, Tensor& C);
 
   /// Accessors
-  int size() const { return total; }
+  int size() const { return total; }     // Does the same thing as getTotal()
+  int getTotal() const { return total; } // Does the same thing as size()
   int getRank() { return shape.rank; }
   int getDim(int i);
   Shape getShape() const { return shape; }
@@ -136,7 +140,7 @@ class Tensor {
 
  private:
   /// Helper functions
-  void initialize(Shape s, bool del=true);
+  void initialize(Shape s, bool del=true, bool zero=true, int tot=-1);
   template<typename ...T> void at_address(int&, int) const {};
   template<typename ...T> void at_address(int& add, int step, int first, T ... last) const {
     if (step>=shape.rank || first>=shape.dims[step]) throw TensorOutOfBounds();

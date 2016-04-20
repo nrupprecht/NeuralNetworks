@@ -1,4 +1,5 @@
 CC = icpc
+MPICC = mpicxx
 OPT = -O3 -g
 # -xHost is slow, fo is -fast since it includes xHost
 CFLAGS = -std=c++14 $(OPT)
@@ -11,23 +12,23 @@ all:	$(targets)
 
 # Executables
 MNISTNet : MNISTNet.o $(base) MNISTUnpack.o EasyBMP.o
-	$(CC) -o $@ $^ $(LDLIBS)
+	$(MPICC) -o $@ $^ $(LDLIBS)
 
 CIFARNet: CIFARNet.o $(base) CIFARUnpack.o
-	$(CC) -o $@ $^ $(LDLIBS)
+	$(MPICC) -o $@ $^ $(LDLIBS)
 
 AutoEncodeMNIST: AutoEncodeMNIST.o $(base) MNISTUnpack.o EasyBMP.o
-	$(CC) -o $@ $^ $(LDLIBS)
+	$(MPICC) -o $@ $^ $(LDLIBS)
 
 # Object files
 EasyBMP.o : EasyBMP/EasyBMP.cpp
 	$(CC) -c $(CFLAGS) $<
 
 Network.o : Network.cpp Neuron.o
-	$(CC) -c $(CFLAGS) $<
+	$(MPICC) -c $(CFLAGS) $<
 
 %.o : %.cpp
-	$(CC) -c $(CFLAGS) $<
+	$(MPICC) -c $(CFLAGS) $<
 
 .PHONY : clean
 clean:

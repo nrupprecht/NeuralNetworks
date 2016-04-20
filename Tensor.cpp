@@ -15,7 +15,7 @@ Tensor::~Tensor() {
 }
 
 Tensor& Tensor::operator=(const Tensor& T) {
-  if (array) delete [] array;
+  if (T.total!=total && array) delete [] array; // Need a new array
   if (stride) delete [] stride;
   
   initialize(T.shape);
@@ -244,13 +244,19 @@ std::ostream& operator<<(std::ostream& out, const Tensor& T) {
   return out;
 }
 
-void Tensor::initialize(Shape s, bool del) {
+void Tensor::initialize(Shape s, bool del, bool zero, int tot) {
   shape = s;
 
   // Find total
-  total = 1;
-  for (int i=0; i<shape.rank; i++) total *= shape.dims[i];
-  
+  total = s.getTotal();
+  /*
+  if (tot==-1) {
+    total = 1;
+    for (int i=0; i<shape.rank; i++) total *= shape.dims[i];
+  }
+  else total = tot;
+  */
+
   // Set stride array
   int count = 1;
   stride = new int[shape.rank];
@@ -262,7 +268,7 @@ void Tensor::initialize(Shape s, bool del) {
   if (del) {
     // Set data array
     array = new double[total];
-    for (int i=0; i<total; i++) array[i] = 0.;
+    if (zero) for (int i=0; i<total; i++) array[i] = 0.;
   }
 }
 

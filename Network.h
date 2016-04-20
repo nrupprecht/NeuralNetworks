@@ -5,6 +5,8 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <mpi.h>
+
 #include "Neuron.h"
 #include "EasyBMP/EasyBMP.h"
 
@@ -43,7 +45,16 @@ class Network {
 
   // Network training/use
   void train(int subset=-1);
+  void trainMPI(int subset=-1);
   Tensor feedForward(Tensor& input);
+
+  // Accessors
+  vector<double> getErrorRec() { return errorRec; }
+  vector<double> getTestPercentRec() { return testPercentRec; }
+  vector<double> getTrainPercentRec() { return trainPercentRec; }
+  vector<double> getTimeRec() { return timeRec; }
+  double getAveTime();
+  void printDescription();
 
   // Mutators
   void setRate(double r) { rate = r; }
@@ -74,6 +85,12 @@ class Network {
   bool display; // Whether to display iteration data
   bool calcError; // Whether to calculate the squared error or not
   bool checkCorrect; // Whether to check whether training data was correct
+  int trainCorrect, testCorrect;
+
+  vector<double> errorRec;
+  vector<double> testPercentRec;
+  vector<double> trainPercentRec;
+  vector<double> timeRec;
 
   // Training/Testing data
   vector<Tensor*> inputs;
@@ -87,9 +104,14 @@ class Network {
   Neuron** layers;
   bool *trainMarker; // Which layers to train
 
+  // For MPI
+  vector<Tensor*> commonTensors; // An array of pointers to delta tensors (for weights and biases)
+  int rank, size;
+
   // Helper functions
   inline void deleteArrays();
   inline void createArrays(vector<int>& neurons);
+  inline void createCommonTensorPool();
   inline void feedForward();
   inline bool checkMax(const Tensor& target);
   inline double sqrError(const Tensor& target);
@@ -97,7 +119,10 @@ class Network {
   inline void backPropagate();
   inline void gradientDescent();
   inline void clearMatrices();
-  inline bool checkStart(int& NData);
+  inline bool checkStart(int& NData, bool quiet=false);
+  inline void trainMinibatch(int base, int num, double& aveError);
+  inline void printData(int iter, float time, double aveError);
+  inline void checkTestSet();
 };
 
 #endif

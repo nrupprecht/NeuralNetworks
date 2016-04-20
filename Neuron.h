@@ -27,8 +27,12 @@ class Neuron {
   virtual void clear() = 0;
   virtual void setTensor(int n, Tensor* M) = 0;
   virtual Tensor*& getTensor(int n) = 0;
+  virtual vector<Tensor*> getCommon() = 0;
 
   class OutOfBounds {};
+
+  Shape getInShape() const { return inShape; }
+  Shape getOutShape() const { return outShape; }
 
  protected:
   Shape inShape, outShape;
@@ -46,6 +50,7 @@ class Sigmoid : public Neuron {
   virtual void clear();
   virtual void setTensor(int n, Tensor *M);
   virtual Tensor*& getTensor(int n);
+  virtual vector<Tensor*> getCommon();
 
   void setTransposed(bool t) { transposed = t; }
  protected:

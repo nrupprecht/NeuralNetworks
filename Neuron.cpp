@@ -116,3 +116,10 @@ Tensor*& Sigmoid::getTensor(int n) {
   default: throw OutOfBounds();
   }
 }
+
+vector<Tensor*> Sigmoid::getCommon() {
+  vector<Tensor*> vec;
+  vec.push_back(wDeltas);
+  vec.push_back(bDeltas);
+  return vec;
+}
