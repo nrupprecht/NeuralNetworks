@@ -55,6 +55,7 @@ void Network::printDescription() {
   }
   cout << endl;
   cout << "Using " << size << " processes." << endl;
+  cout << "Minibatch size " << minibatch << ", Rate " << rate << endl;
 }
 
 void Network::createFeedForward(vector<int>& neurons, function F, function DF) {
@@ -117,6 +118,7 @@ void Network::train(int NData) {
   int outSize = targets.at(0)->size();
   double invErrNorm = 1.0/(NData*outSize);
   clearMatrices(); // Initial clear
+  clock_t beginning = clock();
   for (int iter=0; iter<trainingIters; iter++) {
     double aveError = 0;
     trainCorrect = 0;
@@ -146,9 +148,15 @@ void Network::train(int NData) {
     }
     // Display iteration summary
     timeRec.push_back((double)(end-start)/CLOCKS_PER_SEC);
+    
     if (display) printData(iter+1, (float)(end-start)/CLOCKS_PER_SEC, aveError);
     // Record data
-    if (calcError) errorRec.push_back(aveError);
+    if (calcError) {
+      errorRec.push_back(aveError);
+      double time = (double)(end-beginning)/CLOCKS_PER_SEC;
+      auto R = pair<double, double>(time, aveError);
+      errVtime.push_back(R);
+    }
     if (checkCorrect) trainPercentRec.push_back((double)trainCorrect/inputs.size());
   }
   if (display) cout << "Training over." << endl;
@@ -159,7 +167,6 @@ void Network::trainMPI(int NData) {
     train(NData);
     return;
   }
-  
   if (rank==0 && !checkStart(NData)) return;
   if (rank!=0 && !checkStart(NData,true)) return;
   
@@ -179,7 +186,8 @@ void Network::trainMPI(int NData) {
   num = min(num, minibatch-shift);
   num = max(num, 0);
 
-  clock_t start, end;
+  clock_t start, end, beginning;
+  if (rank==0) beginning = clock();
   clearMatrices(); // Initial clear
   for (int iter=0; iter<trainingIters; iter++) {
     double aveError = 0;
@@ -234,7 +242,12 @@ void Network::trainMPI(int NData) {
       // Display iteration summary
       if (display) printData(iter+1, (float)(end-start)/CLOCKS_PER_SEC, aveError);
       // Record data
-      if (calcError) errorRec.push_back(aveError);
+      if (calcError) {
+	errorRec.push_back(aveError);
+	double time = (double)(end-beginning)/CLOCKS_PER_SEC;
+	auto R = pair<double, double>(time, aveError);
+	errVtime.push_back(R);
+      }
       if (checkCorrect) trainPercentRec.push_back((double)trainCorrect/inputs.size());
     }
     MPI_Barrier( MPI_COMM_WORLD ); // Wait to start the next iteration
@@ -345,7 +358,7 @@ inline bool Network::checkStart(int& NData, bool quiet) {
   }
 
   // Announcement
-  if (display && !quiet) {
+  if (display && !quiet && rank==0) {
     cout << "Training data size: " << NData << endl;
     int complexity = 0, biases = 0;
     for (int i=1; i<neurons.size(); i++) complexity += neurons.at(i)*neurons.at(i-1);

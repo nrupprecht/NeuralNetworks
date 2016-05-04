@@ -30,14 +30,12 @@ int main(int argc, char* argv[]) {
   
   neurons.push_back(784);
   neurons.push_back(500);
-  neurons.push_back(100);
+  neurons.push_back(30);
   neurons.push_back(10);
   
-  net.setRate(0.01);
+  net.setRate(0.1);
   net.setL2const(0.);  
   net.createFeedForward(neurons, sigmoid, dsigmoid);
-
-  if (rank==0) net.printDescription();
 
   net.setInputs(inputs);
   net.setTargets(targets);
@@ -45,16 +43,19 @@ int main(int argc, char* argv[]) {
   net.setTestInputs(testInputs);
   net.setTestTargets(testTargets);
 
-  net.setMinibatch(100);
+  net.setMinibatch(50);
   net.setTrainingIters(50);
   net.setCalcError(true);
   net.setDisplay(false);
+
+  if (rank==0) net.printDescription();
   net.trainMPI();
 
   if (rank==0) {
     cout << "errRec=" << print(net.getErrorRec()) << ";\n";
     cout << "trainCorrect=" << print(net.getTrainPercentRec()) << ";\n";
     cout << "aveTime=" << net.getAveTime() << ";\n";
+    cout << "errVtime=" << print(net.getErrVTime()) << ";\n";
   }
   
   for (auto p : inputs) delete p;

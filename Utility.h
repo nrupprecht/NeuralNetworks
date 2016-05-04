@@ -10,6 +10,7 @@
 
 #include <vector>   // For vector
 using std::vector;
+using std::pair;
 
 #include <string>   // For string
 using std::string;
@@ -42,6 +43,11 @@ template<typename T> string print(const vector<T>& array) {
   stream << array.at(array.size()-1) << "}";
   stream >> str;
   return str;
+}
+
+template<typename T, typename U> ostream& operator<<(ostream& out, pair<T, U> P) {
+  out << "{" << P.first << "," << P.second << "}";
+  return out;
 }
 
 #endif

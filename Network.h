@@ -53,6 +53,7 @@ class Network {
   vector<double> getTestPercentRec() { return testPercentRec; }
   vector<double> getTrainPercentRec() { return trainPercentRec; }
   vector<double> getTimeRec() { return timeRec; }
+  auto getErrVTime() { return errVtime; }
   double getAveTime();
   void printDescription();
 
@@ -91,6 +92,7 @@ class Network {
   vector<double> testPercentRec;
   vector<double> trainPercentRec;
   vector<double> timeRec;
+  vector<pair<double, double>> errVtime;
 
   // Training/Testing data
   vector<Tensor*> inputs;

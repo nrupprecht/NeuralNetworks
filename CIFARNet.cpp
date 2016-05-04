@@ -39,19 +39,18 @@ int main(int argc, char* argv[]) {
   net.setL2const(0.);
   net.createFeedForward(neurons, sigmoid, dsigmoid);
 
-  if (rank==0) net.printDescription();
-
   net.setInputs(images);
   net.setTargets(labels);
 
   //net.setTestInputs(testImages);
   //net.setTestTargets(testLabels);
 
-  net.setMinibatch(100);
+  net.setMinibatch(1000);
   net.setTrainingIters(50);
   net.setCalcError(true);
-  net.setDisplay(false);
+  net.setDisplay(true);
 
+  if (rank==0) net.printDescription();
   net.trainMPI();
   
   if (rank==0) {

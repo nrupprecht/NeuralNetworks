@@ -1,6 +1,6 @@
 CC = icpc
 MPICC = mpicxx
-OPT = -O3 -g
+OPT = -O3 -g -ip
 # -xHost is slow, fo is -fast since it includes xHost
 CFLAGS = -std=c++14 $(OPT)
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
